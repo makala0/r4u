@@ -40,6 +40,36 @@ public class DashboardExportService {
         Files.writeString(targetPath, builder.toString(), StandardCharsets.UTF_8);
     }
 
+    public void exportDefectsToCsv(Path targetPath, List<DashboardService.DefectRow> defects) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Datum a cas,Typ defektu,Kamera,Cislo bobiny,Pozice v navinu,Plocha defektu,Velikost,Vyrazeno,Poloha,Klasifikace\n");
+
+        for (DashboardService.DefectRow defect : defects) {
+            builder.append(escapeCsv(formatDateTime(defect.createdAt()))).append(',')
+                    .append(escapeCsv(defect.type() == null ? "" : defect.type().name())).append(',')
+                    .append(escapeCsv(valueOrBlank(defect.camera()))).append(',')
+                    .append(escapeCsv(valueOrBlank(defect.bobinaColumnNumber()))).append(',')
+                    .append(escapeCsv(formatDecimal(defect.positionInRoll()))).append(',')
+                    .append(escapeCsv(formatDecimal(defect.defectArea()))).append(',')
+                    .append(escapeCsv(defect.sizeClass() == null ? "" : defect.sizeClass().name())).append(',')
+                    .append(escapeCsv(defect.reject() ? "ANO" : "NE")).append(',')
+                    .append(escapeCsv(valueOrBlank(defect.defectLocation()))).append(',')
+                    .append(escapeCsv(valueOrBlank(defect.classification()))).append('\n');
+        }
+
+        Files.writeString(targetPath, builder.toString(), StandardCharsets.UTF_8);
+    }
+
+    public void exportDefectsToXlsx(Path targetPath, List<DashboardService.DefectRow> defects) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            writeDefectsSheetWithoutImage(workbook, defects);
+
+            try (OutputStream outputStream = Files.newOutputStream(targetPath)) {
+                workbook.write(outputStream);
+            }
+        }
+    }
+
     public void exportDashboardRowsToXlsx(
             Path targetPath,
             List<DashboardService.DashboardRow> rows,
@@ -107,6 +137,38 @@ public class DashboardExportService {
             row.createCell(8).setCellValue(valueOrBlank(defect.defectLocation()));
             row.createCell(9).setCellValue(valueOrBlank(defect.classification()));
             row.createCell(10).setCellValue(defect.hasImage() ? "ANO" : "NE");
+        }
+
+        autoSizeColumns(sheet, columns.length);
+    }
+
+    private void writeDefectsSheetWithoutImage(Workbook workbook, List<DashboardService.DefectRow> defects) {
+        Sheet sheet = workbook.createSheet("Defekty");
+        CellStyle headerStyle = createHeaderStyle(workbook);
+        Row header = sheet.createRow(0);
+        String[] columns = {
+                "Datum a cas", "Typ defektu", "Kamera", "Cislo bobiny", "Pozice v navinu",
+                "Plocha defektu", "Velikost", "Vyrazeno", "Poloha", "Klasifikace"
+        };
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = header.createCell(i);
+            cell.setCellValue(columns[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        int rowIndex = 1;
+        for (DashboardService.DefectRow defect : defects) {
+            Row row = sheet.createRow(rowIndex++);
+            row.createCell(0).setCellValue(formatDateTime(defect.createdAt()));
+            row.createCell(1).setCellValue(defect.type() == null ? "" : defect.type().name());
+            row.createCell(2).setCellValue(valueOrBlank(defect.camera()));
+            row.createCell(3).setCellValue(valueOrBlank(defect.bobinaColumnNumber()));
+            row.createCell(4).setCellValue(formatDecimal(defect.positionInRoll()));
+            row.createCell(5).setCellValue(formatDecimal(defect.defectArea()));
+            row.createCell(6).setCellValue(defect.sizeClass() == null ? "" : defect.sizeClass().name());
+            row.createCell(7).setCellValue(defect.reject() ? "ANO" : "NE");
+            row.createCell(8).setCellValue(valueOrBlank(defect.defectLocation()));
+            row.createCell(9).setCellValue(valueOrBlank(defect.classification()));
         }
 
         autoSizeColumns(sheet, columns.length);

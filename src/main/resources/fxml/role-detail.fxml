@@ -34,8 +34,15 @@
                        style="-fx-font-size: 13px; -fx-text-fill: #666666;"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Button text="Správa vyřazení" onAction="#onOpenRejectRulesClick"/>
+                <Button text="Export CSV" onAction="#onExportCsvClick"/>
+                <Button text="Export XLSX" onAction="#onExportXlsxClick"/>
                 <Button text="Zpět na dashboard" onAction="#onBackToDashboardClick"/>
             </HBox>
+
+            <Label fx:id="messageLabel"
+                   text=""
+                   wrapText="true"
+                   style="-fx-text-fill: #C62828; -fx-font-weight: bold;"/>
 
             <GridPane hgap="18.0" vgap="10.0">
                 <Label text="createdAt:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>

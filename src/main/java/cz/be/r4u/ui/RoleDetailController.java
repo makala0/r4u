@@ -4,6 +4,7 @@ import cz.be.r4u.entity.UserAccount;
 import cz.be.r4u.enums.DefectSizeClass;
 import cz.be.r4u.enums.DefectType;
 import cz.be.r4u.enums.RollStatus;
+import cz.be.r4u.service.DashboardExportService;
 import cz.be.r4u.service.DashboardService;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -30,15 +31,20 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
@@ -52,6 +58,7 @@ public class RoleDetailController {
 
     private final SceneManager sceneManager;
     private final DashboardService dashboardService;
+    private final DashboardExportService dashboardExportService;
 
     @FXML
     private Label titleLabel;
@@ -73,6 +80,9 @@ public class RoleDetailController {
 
     @FXML
     private Label defectsCountLabel;
+
+    @FXML
+    private Label messageLabel;
 
     @FXML
     private FlowPane legendPane;
@@ -128,9 +138,14 @@ public class RoleDetailController {
     private DashboardService.DashboardRow selectedRoll;
     private Long highlightedDefectId;
 
-    public RoleDetailController(SceneManager sceneManager, DashboardService dashboardService) {
+    public RoleDetailController(
+            SceneManager sceneManager,
+            DashboardService dashboardService,
+            DashboardExportService dashboardExportService
+    ) {
         this.sceneManager = sceneManager;
         this.dashboardService = dashboardService;
+        this.dashboardExportService = dashboardExportService;
     }
 
     @FXML
@@ -152,11 +167,13 @@ public class RoleDetailController {
         configureSelectionHandling();
         configureDefectTableRowFactory();
         buildLegend();
+        clearMessage();
     }
 
     public void setContext(UserAccount loggedUser, DashboardService.DashboardRow selectedRoll) {
         this.loggedUser = loggedUser;
         this.selectedRoll = dashboardService.loadDashboardRowByRollId(selectedRoll.rollId());
+        clearMessage();
 
         operatorLabel.setText(loggedUser == null ? "-" : "Operátor: " + loggedUser.getUsername());
         titleLabel.setText("Detail role");
@@ -194,6 +211,50 @@ public class RoleDetailController {
     @FXML
     public void onOpenRejectRulesClick() {
         sceneManager.showRejectRules(loggedUser, selectedRoll);
+    }
+
+    @FXML
+    public void onExportCsvClick() {
+        List<DashboardService.DefectRow> defects = List.copyOf(defectTable.getItems());
+        if (defects.isEmpty()) {
+            showError("Neni co exportovat. Tabulka Defekty role je prazdna.");
+            return;
+        }
+
+        File selectedFile = chooseExportFile("CSV export", "role-defects-export.csv", "CSV soubor", "*.csv");
+        if (selectedFile == null) {
+            return;
+        }
+
+        Path targetPath = appendExtensionIfMissing(selectedFile.toPath(), ".csv");
+        try {
+            dashboardExportService.exportDefectsToCsv(targetPath, defects);
+            showSuccess("CSV export uspesne ulozen: " + targetPath.getFileName());
+        } catch (IOException ex) {
+            showError("CSV export selhal: " + ex.getMessage());
+        }
+    }
+
+    @FXML
+    public void onExportXlsxClick() {
+        List<DashboardService.DefectRow> defects = List.copyOf(defectTable.getItems());
+        if (defects.isEmpty()) {
+            showError("Neni co exportovat. Tabulka Defekty role je prazdna.");
+            return;
+        }
+
+        File selectedFile = chooseExportFile("XLSX export", "role-defects-export.xlsx", "Excel soubor", "*.xlsx");
+        if (selectedFile == null) {
+            return;
+        }
+
+        Path targetPath = appendExtensionIfMissing(selectedFile.toPath(), ".xlsx");
+        try {
+            dashboardExportService.exportDefectsToXlsx(targetPath, defects);
+            showSuccess("XLSX export uspesne ulozen: " + targetPath.getFileName());
+        } catch (IOException ex) {
+            showError("XLSX export selhal: " + ex.getMessage());
+        }
     }
 
     private void configureTableFormatting() {
@@ -631,4 +692,43 @@ public class RoleDetailController {
     private String valueOrDash(Object value) {
         return value == null ? "-" : String.valueOf(value);
     }
+
+    private void showError(String message) {
+        if (messageLabel == null) {
+            return;
+        }
+        messageLabel.setStyle("-fx-text-fill: #C62828; -fx-font-weight: bold;");
+        messageLabel.setText(message);
+    }
+
+    private void showSuccess(String message) {
+        if (messageLabel == null) {
+            return;
+        }
+        messageLabel.setStyle("-fx-text-fill: #1B7F3B; -fx-font-weight: bold;");
+        messageLabel.setText(message);
+    }
+
+    private void clearMessage() {
+        if (messageLabel != null) {
+            messageLabel.setText("");
+        }
+    }
+
+    private File chooseExportFile(String title, String defaultName, String filterLabel, String extensionPattern) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(title);
+        fileChooser.setInitialFileName(defaultName);
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(filterLabel, extensionPattern));
+        return fileChooser.showSaveDialog(defectTable.getScene().getWindow());
+    }
+
+    private Path appendExtensionIfMissing(Path path, String extension) {
+        String normalizedName = path.getFileName().toString().toLowerCase();
+        if (normalizedName.endsWith(extension)) {
+            return path;
+        }
+        return path.resolveSibling(path.getFileName() + extension);
+    }
+
 }
