@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="cz.be.r4u.ui.DashboardController">
+    <top>
+        <VBox spacing="10.0">
+            <padding>
+                <Insets top="12.0" right="20.0" bottom="10.0" left="20.0"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <Label text="Dashboard historie výroby"
+                       style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+
+                <Separator orientation="VERTICAL"/>
+
+                <Label fx:id="welcomeLabel"
+                       text="Operátor"
+                       style="-fx-font-size: 13px; -fx-text-fill: #666666;"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button text="Zpět na domů" onAction="#onBackToHomeClick"/>
+            </HBox>
+
+            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                <Label text="Od:"/>
+                <DatePicker fx:id="fromDatePicker" prefWidth="125.0"/>
+
+                <TextField fx:id="fromTimeField" promptText="HH:mm" prefWidth="68.0"/>
+
+                <Label text="Do:"/>
+                <DatePicker fx:id="toDatePicker" prefWidth="125.0"/>
+
+                <TextField fx:id="toTimeField" promptText="HH:mm" prefWidth="68.0"/>
+
+                <Label text="Číslo objednávky:"/>
+                <TextField fx:id="orderNumberField" promptText="100245" prefWidth="90.0"/>
+
+                <Label text="Status:"/>
+                <ComboBox fx:id="statusComboBox" prefWidth="85.0"/>
+
+                <Label text="Typ:"/>
+                <ComboBox fx:id="defectTypeComboBox" prefWidth="170.0"/>
+
+                <Button text="Filtrovat" onAction="#onFilterClick"/>
+                <Button text="Reset" onAction="#onResetClick"/>
+                <Separator orientation="VERTICAL"/>
+                <Button text="Export CSV" onAction="#onExportCsvClick"/>
+                <Button text="Export XLSX" onAction="#onExportXlsxClick"/>
+            </HBox>
+
+            <Label fx:id="messageLabel"
+                   text=""
+                   wrapText="true"
+                   style="-fx-text-fill: #C62828; -fx-font-weight: bold;"/>
+
+            <HBox spacing="10.0">
+                <VBox spacing="4.0"
+                      style="-fx-background-color: #F5F7FA; -fx-background-radius: 8; -fx-padding: 8 12 8 12;">
+                    <Label text="Celkem rolí"
+                           style="-fx-font-size: 11px; -fx-text-fill: #666666;"/>
+                    <Label fx:id="totalCountLabel"
+                           text="0"
+                           style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                </VBox>
+
+                <VBox spacing="4.0"
+                      style="-fx-background-color: #F0FFF4; -fx-background-radius: 8; -fx-padding: 8 12 8 12;">
+                    <Label text="OK"
+                           style="-fx-font-size: 11px; -fx-text-fill: #666666;"/>
+                    <Label fx:id="okCountLabel"
+                           text="0"
+                           style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                </VBox>
+
+                <VBox spacing="4.0"
+                      style="-fx-background-color: #FFF5F5; -fx-background-radius: 8; -fx-padding: 8 12 8 12;">
+                    <Label text="NOK"
+                           style="-fx-font-size: 11px; -fx-text-fill: #666666;"/>
+                    <Label fx:id="nokCountLabel"
+                           text="0"
+                           style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                </VBox>
+
+                <VBox spacing="4.0"
+                      style="-fx-background-color: #FFFBEA; -fx-background-radius: 8; -fx-padding: 8 12 8 12;">
+                    <Label text="Role s defektem"
+                           style="-fx-font-size: 11px; -fx-text-fill: #666666;"/>
+                    <Label fx:id="defectRollCountLabel"
+                           text="0"
+                           style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="12.0">
+            <padding>
+                <Insets top="0.0" right="20.0" bottom="20.0" left="20.0"/>
+            </padding>
+
+            <Label text="Hlavní přehled (max. 50 řádků)"
+                   style="-fx-font-size: 15px; -fx-font-weight: bold;"/>
+
+            <TableView fx:id="resultTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="createdAtColumn" text="Datum a čas" prefWidth="200.0"/>
+                    <TableColumn fx:id="orderNumberColumn" text="Číslo objednávky" prefWidth="160.0"/>
+                    <TableColumn fx:id="minColumn" text="Min" prefWidth="120.0"/>
+                    <TableColumn fx:id="statusColumn" text="Status" prefWidth="120.0"/>
+                    <TableColumn fx:id="defectsCountColumn" text="Počet defektů" prefWidth="140.0"/>
+                </columns>
+            </TableView>
+
+            <Label text="Defekty vybrané role"
+                   style="-fx-font-size: 15px; -fx-font-weight: bold;"/>
+
+            <TableView fx:id="defectTable" prefHeight="260.0">
+                <columns>
+                    <TableColumn fx:id="defectCreatedAtColumn" text="Datum a čas" prefWidth="180.0"/>
+                    <TableColumn fx:id="defectTypeColumn" text="Typ defektu" prefWidth="150.0"/>
+                    <TableColumn fx:id="defectCameraColumn" text="Kamera" prefWidth="110.0"/>
+                    <TableColumn fx:id="defectBobinaColumn" text="Číslo bobiny" prefWidth="80.0"/>
+                    <TableColumn fx:id="defectPositionColumn" text="Pozice v návinu" prefWidth="130.0"/>
+                    <TableColumn fx:id="defectAreaColumn" text="Plocha defektu" prefWidth="110.0"/>
+                    <TableColumn fx:id="defectSizeClassColumn" text="Velikost defektu" prefWidth="70.0"/>
+                    <TableColumn fx:id="defectRejectColumn" text="Vyřazeno" prefWidth="80.0"/>
+                    <TableColumn fx:id="defectLocationColumn" text="Poloha defektu" prefWidth="160.0"/>
+                    <TableColumn fx:id="defectClassificationColumn" text="Klasifikace" prefWidth="150.0"/>
+                    <TableColumn fx:id="defectImageColumn" text="Snímek" prefWidth="100.0"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+</BorderPane>

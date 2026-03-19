@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="cz.be.r4u.ui.RejectRulesController">
+
+    <top>
+        <VBox spacing="12.0">
+            <padding>
+                <Insets top="14.0" right="20.0" bottom="12.0" left="20.0"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <Label text="Správa pravidel vyřazení"
+                       style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+                <Label fx:id="operatorLabel"
+                       text="Operátor"
+                       style="-fx-font-size: 13px; -fx-text-fill: #666666;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Obnovit" onAction="#onRefreshClick"/>
+                <Button text="Zpět" onAction="#onBackClick"/>
+            </HBox>
+
+            <Label text="Nastav hranice velikostí a pravidla vyřazení pro jednotlivé typy vad."
+                   wrapText="true"/>
+
+            <GridPane hgap="12.0" vgap="10.0">
+                <Label text="S max (mm²):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <TextField fx:id="sMaxAreaField" promptText="např. 5.0" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                <Label text="M max (mm²):" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                <TextField fx:id="mMaxAreaField" promptText="např. 10.0" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                <Label text="L max (mm²):" GridPane.rowIndex="0" GridPane.columnIndex="4"/>
+                <TextField fx:id="lMaxAreaField" promptText="např. 15.0" GridPane.rowIndex="0" GridPane.columnIndex="5"/>
+
+                <Button text="Uložit hranice" onAction="#onSaveThresholdsClick" GridPane.rowIndex="0" GridPane.columnIndex="6"/>
+            </GridPane>
+
+            <Label fx:id="messageLabel"
+                   text=""
+                   wrapText="true"/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="12.0">
+            <padding>
+                <Insets top="0.0" right="20.0" bottom="20.0" left="20.0"/>
+            </padding>
+
+            <TableView fx:id="rulesTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="defectTypeColumn" text="Typ vady" prefWidth="260.0"/>
+                    <TableColumn fx:id="rejectFromSizeColumn" text="Vyřadit od velikosti" prefWidth="220.0"/>
+                    <TableColumn fx:id="enabledColumn" text="Aktivní" prefWidth="120.0"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+</BorderPane>
