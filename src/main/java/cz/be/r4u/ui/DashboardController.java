@@ -12,7 +12,6 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -25,6 +24,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -39,7 +39,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class DashboardController {
@@ -47,6 +49,8 @@ public class DashboardController {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.00");
+    private static final double THUMBNAIL_WIDTH = 80.0;
+    private static final double THUMBNAIL_HEIGHT = 60.0;
 
     private final SceneManager sceneManager;
     private final DashboardService dashboardService;
@@ -144,6 +148,8 @@ public class DashboardController {
 
     @FXML
     private TableColumn<DashboardService.DefectRow, Void> defectImageColumn;
+
+    private final Map<Long, Image> defectImageCache = new HashMap<>();
 
     private UserAccount loggedUser;
 
@@ -410,13 +416,20 @@ public class DashboardController {
 
     private void configureSelectionHandling() {
         resultTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            defectImageCache.clear();
+
             if (newValue == null) {
                 clearDefectTable();
                 return;
             }
 
             defectTable.setItems(FXCollections.observableArrayList(newValue.defects()));
+            if (!newValue.defects().isEmpty()) {
+                defectTable.getSelectionModel().selectFirst();
+            }
         });
+
+        defectTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> defectTable.refresh());
     }
 
     private void configureResultTableRowFactory() {
@@ -436,48 +449,106 @@ public class DashboardController {
 
     private void configureImageColumn() {
         defectImageColumn.setCellFactory(column -> new TableCell<>() {
-            private final Button showButton = new Button("Zobrazit");
+            private final ImageView thumbnailView = new ImageView();
+            private final StackPane thumbnailContainer = new StackPane(thumbnailView);
 
             {
-                showButton.setOnAction(event -> {
-                    DashboardService.DefectRow defectRow = getTableView().getItems().get(getIndex());
-                    openDefectImageModal(defectRow);
-                });
+                thumbnailView.setPreserveRatio(true);
+                thumbnailView.setFitWidth(THUMBNAIL_WIDTH);
+                thumbnailView.setFitHeight(THUMBNAIL_HEIGHT);
+                thumbnailView.setSmooth(true);
+
+                thumbnailContainer.setPickOnBounds(true);
+                thumbnailContainer.setPadding(new Insets(4));
             }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
 
-                if (empty || getIndex() >= getTableView().getItems().size()) {
+                DashboardService.DefectRow defectRow = getCurrentDefectRow();
+                if (empty || defectRow == null) {
                     setText(null);
                     setGraphic(null);
+                    thumbnailContainer.setOnMouseClicked(null);
                     return;
                 }
-
-                DashboardService.DefectRow defectRow = getTableView().getItems().get(getIndex());
 
                 if (!defectRow.hasImage()) {
                     setText("-");
                     setGraphic(null);
+                    setStyle("-fx-text-fill: #1F1F1F;");
+                    thumbnailContainer.setOnMouseClicked(null);
                     return;
                 }
 
+                DashboardService.DefectRow selectedDefect = defectTable.getSelectionModel().getSelectedItem();
+                boolean isSelected = selectedDefect != null && selectedDefect.defectId() != null
+                        && selectedDefect.defectId().equals(defectRow.defectId());
+
+                if (!isSelected) {
+                    setText("-");
+                    setGraphic(null);
+                    setStyle("-fx-text-fill: #1F1F1F;");
+                    thumbnailContainer.setOnMouseClicked(null);
+                    return;
+                }
+
+                Image image = loadDefectImage(defectRow.defectId());
+                if (image == null) {
+                    setText("-");
+                    setGraphic(null);
+                    setStyle("-fx-text-fill: #1F1F1F;");
+                    thumbnailContainer.setOnMouseClicked(null);
+                    return;
+                }
+
+                thumbnailView.setImage(image);
+                thumbnailContainer.setOnMouseClicked(event -> {
+                    openDefectImageModal(defectRow);
+                    event.consume();
+                });
                 setText(null);
-                setGraphic(showButton);
+                setGraphic(thumbnailContainer);
+                setStyle("");
+            }
+
+            private DashboardService.DefectRow getCurrentDefectRow() {
+                if (getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    return null;
+                }
+                return getTableView().getItems().get(getIndex());
             }
         });
     }
 
-    private void openDefectImageModal(DashboardService.DefectRow defectRow) {
-        byte[] imageBytes = dashboardService.loadDefectImage(defectRow.defectId());
+    private Image loadDefectImage(Long defectId) {
+        if (defectId == null) {
+            return null;
+        }
 
+        Image cachedImage = defectImageCache.get(defectId);
+        if (cachedImage != null) {
+            return cachedImage;
+        }
+
+        byte[] imageBytes = dashboardService.loadDefectImage(defectId);
         if (imageBytes == null || imageBytes.length == 0) {
-            showError("Pro vybraný defekt není obrázek k dispozici.");
-            return;
+            return null;
         }
 
         Image image = new Image(new ByteArrayInputStream(imageBytes));
+        defectImageCache.put(defectId, image);
+        return image;
+    }
+
+    private void openDefectImageModal(DashboardService.DefectRow defectRow) {
+        Image image = loadDefectImage(defectRow.defectId());
+
+        if (image == null) {
+            showError("Pro vybraný defekt není obrázek k dispozici.");
+            return;
+        }
 
         ImageView fullImageView = new ImageView(image);
         fullImageView.setPreserveRatio(true);
@@ -532,6 +603,7 @@ public class DashboardController {
     }
 
     private void clearDefectTable() {
+        defectImageCache.clear();
         defectTable.setItems(FXCollections.observableArrayList());
     }
 
