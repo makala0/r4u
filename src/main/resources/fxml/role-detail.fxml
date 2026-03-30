@@ -8,6 +8,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
@@ -40,7 +41,6 @@
             </HBox>
 
             <Label fx:id="messageLabel"
-                   text=""
                    wrapText="true"
                    style="-fx-text-fill: #C62828; -fx-font-weight: bold;"/>
 
@@ -66,7 +66,7 @@
     <center>
         <VBox spacing="12.0">
             <padding>
-                <Insets top="0.0" right="20.0" bottom="20.0" left="20.0"/>
+                <Insets right="20.0" bottom="20.0" left="20.0"/>
             </padding>
 
             <Label text="Graf role"
@@ -89,21 +89,44 @@
             <Label text="Defekty role"
                    style="-fx-font-size: 15px; -fx-font-weight: bold;"/>
 
-            <TableView fx:id="defectTable" VBox.vgrow="ALWAYS">
-                <columns>
-                    <TableColumn fx:id="defectCreatedAtColumn" text="Datum a čas" prefWidth="180.0"/>
-                    <TableColumn fx:id="defectTypeColumn" text="Typ defektu" prefWidth="150.0"/>
-                    <TableColumn fx:id="defectCameraColumn" text="Kamera" prefWidth="110.0"/>
-                    <TableColumn fx:id="defectBobinaColumn" text="Číslo bobiny" prefWidth="80.0"/>
-                    <TableColumn fx:id="defectPositionColumn" text="Pozice v návinu" prefWidth="130.0"/>
-                    <TableColumn fx:id="defectAreaColumn" text="Plocha defektu" prefWidth="110.0"/>
-                    <TableColumn fx:id="defectSizeClassColumn" text="Velikost defektu" prefWidth="70.0"/>
-                    <TableColumn fx:id="defectRejectColumn" text="Vyřazeno" prefWidth="80.0"/>
-                    <TableColumn fx:id="defectLocationColumn" text="Poloha defektu" prefWidth="160.0"/>
-                    <TableColumn fx:id="defectClassificationColumn" text="Klasifikace" prefWidth="150.0"/>
-                    <TableColumn fx:id="defectImageColumn" text="Snímek" prefWidth="100.0"/>
-                </columns>
-            </TableView>
+            <HBox spacing="12.0" VBox.vgrow="ALWAYS">
+                <TableView fx:id="defectTable" HBox.hgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="defectCreatedAtColumn" text="Datum a čas" prefWidth="180.0"/>
+                        <TableColumn fx:id="defectTypeColumn" text="Typ defektu" prefWidth="150.0"/>
+                        <TableColumn fx:id="defectCameraColumn" text="Kamera" prefWidth="110.0"/>
+                        <TableColumn fx:id="defectBobinaColumn" text="Číslo bobiny"/>
+                        <TableColumn fx:id="defectPositionColumn" text="Pozice v návinu" prefWidth="130.0"/>
+                        <TableColumn fx:id="defectAreaColumn" text="Plocha defektu" prefWidth="110.0"/>
+                        <TableColumn fx:id="defectSizeClassColumn" text="Velikost defektu" prefWidth="70.0"/>
+                        <TableColumn fx:id="defectRejectColumn" text="Vyřazeno"/>
+                        <TableColumn fx:id="defectLocationColumn" text="Poloha defektu" prefWidth="160.0"/>
+                        <TableColumn fx:id="defectClassificationColumn" text="Klasifikace" prefWidth="150.0"/>
+                    </columns>
+                </TableView>
+
+                <VBox spacing="8.0" prefWidth="440.0" minWidth="380.0">
+                    <Label text="Snímek vybraného defektu"
+                           style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
+
+                    <BorderPane style="-fx-background-color: #F7F7F7; -fx-border-color: #D0D0D0; -fx-border-radius: 6; -fx-background-radius: 6;">
+                        <center>
+                            <ImageView fx:id="defectPreviewImageView"
+                                       fitWidth="410.0"
+                                       fitHeight="270.0"
+                                       preserveRatio="true"
+                                       visible="false"
+                                       managed="false"/>
+                        </center>
+                        <bottom>
+                            <Label fx:id="defectPreviewPlaceholderLabel"
+                                   text="Vyber defekt se snímkem."
+                                   wrapText="true"
+                                   style="-fx-text-fill: #666666; -fx-padding: 8 10 8 10;"/>
+                        </bottom>
+                    </BorderPane>
+                </VBox>
+            </HBox>
         </VBox>
     </center>
 </BorderPane>
